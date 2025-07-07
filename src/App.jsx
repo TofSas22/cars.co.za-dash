@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState } from "react";
+import InputForm from "./components/InputForm";
+import MetadataCard from "./components/MetadataCard";
+import SentimentChart from "./components/SentimentChart";
+import CommentCategories from "./components/CommentCategories";
+import ReportSection from "./components/ReportSection";
+import { analyzeVideo } from "./api";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleAnalyze = async (url) => {
+    setLoading(true);
+    setError("");
+    setData(null);
+
+    try {
+      const result = await analyzeVideo(url);
+      setData(result);
+    } catch (err) {
+      setError(err.message);
+    }
+
+    setLoading(false);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div className="app-container">
+      <h1>Cars.co.za YouTube Sentiment Dashboard</h1>
+      <InputForm onSubmit={handleAnalyze} loading={loading} />
+      {error && <p className="error">{error}</p>}
 
-export default App
+      {data && (
+        <>
+          <MetadataCard metadata={data.metadata} />
+          <SentimentChart sentiments={data.sentiment_results} />
+          <CommentCategories categories={data.categories} />
+          <ReportSection report={data.report} />
+        </>
+      )}
+    </div>
+  );
+}
